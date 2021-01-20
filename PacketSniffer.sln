@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.12
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PacketSniffer", "pcapTest\PacketSniffer.csproj", "{1C221B5A-7A22-4479-B5AD-DC2820C8B7D2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pcapTest", "pcapTest", "{A249B35F-3B1B-44C4-B932-73CC04C07C11}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2DB47014-C552-497F-8315-E31A080B25AF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{B61A26F4-F9D5-48AC-8AA9-C13908EB4B9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +21,19 @@ Global
 		{1C221B5A-7A22-4479-B5AD-DC2820C8B7D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C221B5A-7A22-4479-B5AD-DC2820C8B7D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C221B5A-7A22-4479-B5AD-DC2820C8B7D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B61A26F4-F9D5-48AC-8AA9-C13908EB4B9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B61A26F4-F9D5-48AC-8AA9-C13908EB4B9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B61A26F4-F9D5-48AC-8AA9-C13908EB4B9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B61A26F4-F9D5-48AC-8AA9-C13908EB4B9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1C221B5A-7A22-4479-B5AD-DC2820C8B7D2} = {A249B35F-3B1B-44C4-B932-73CC04C07C11}
+		{B61A26F4-F9D5-48AC-8AA9-C13908EB4B9F} = {2DB47014-C552-497F-8315-E31A080B25AF}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C545127C-C3AB-47A1-A128-F03FBB86F12E}
 	EndGlobalSection
 EndGlobal

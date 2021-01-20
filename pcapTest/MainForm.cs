@@ -1,23 +1,26 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Windows.Forms;
-using SharpPcap.LibPcap;
+﻿using PacketDotNet;
 using SharpPcap;
-using PacketDotNet;
+using SharpPcap.LibPcap;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Windows.Forms;
 
 
 namespace pcapTest
 {
     public partial class MainForm : Form
     {
-        List<LibPcapLiveDevice> interfaceList = new List<LibPcapLiveDevice>();
-        int selectedIntIndex;
-        LibPcapLiveDevice wifi_device;
+        private const string protocolTCP = "TCP";
+        private const string protocolUDP = "UDP";
+        private const string protocolARP = "ARP";
+        private const string protocolIcmp = "ICMP";
+        private const string protocolIgmp = "IGMP";
+        readonly List<LibPcapLiveDevice> interfaceList = new List<LibPcapLiveDevice>();
+        readonly int selectedIntIndex;
+        readonly LibPcapLiveDevice wifi_device;
         CaptureFileWriterDevice captureFileWriter;
-        Dictionary<int, Packet> capturedPackets_list = new Dictionary<int, Packet>();
+        readonly Dictionary<int, Packet> capturedPackets_list = new Dictionary<int, Packet>();
 
         int packetNumber = 1;
         string time_str = "", sourceIP = "", destinationIP = "", protocol_type = "", length = "";
@@ -40,20 +43,20 @@ namespace pcapTest
             System.Windows.Forms.Application.Exit();
         }
 
-        private void toolStripButton1_Click(object sender, EventArgs e)// Start sniffing
+        private void ToolStripButton1_Click(object sender, EventArgs e)// Start sniffing
         {
-            if(startCapturingAgain == false) //first time 
+            if (startCapturingAgain == false) //first time 
             {
                 System.IO.File.Delete(Environment.CurrentDirectory + "capture.pcap");
                 wifi_device.OnPacketArrival += new PacketArrivalEventHandler(Device_OnPacketArrival);
-                sniffing = new Thread(new ThreadStart(sniffing_Proccess));
+                sniffing = new Thread(new ThreadStart(Sniffing_Proccess));
                 sniffing.Start();
                 toolStripButton1.Enabled = false;
                 toolStripButton2.Enabled = true;
                 textBox1.Enabled = false;
 
             }
-           else if (startCapturingAgain)
+            else if (startCapturingAgain)
             {
                 if (MessageBox.Show("Your packets are captured in a file. Starting a new capture will override existing ones.", "Confirm", MessageBoxButtons.OK, MessageBoxIcon.Warning) == DialogResult.OK)
                 {
@@ -64,7 +67,7 @@ namespace pcapTest
                     packetNumber = 1;
                     textBox2.Text = "";
                     wifi_device.OnPacketArrival += new PacketArrivalEventHandler(Device_OnPacketArrival);
-                    sniffing = new Thread(new ThreadStart(sniffing_Proccess));
+                    sniffing = new Thread(new ThreadStart(Sniffing_Proccess));
                     sniffing.Start();
                     toolStripButton1.Enabled = false;
                     toolStripButton2.Enabled = true;
@@ -75,16 +78,17 @@ namespace pcapTest
         }
 
         // paket information
-        private void listView1_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
+        private void ListView1_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
         {
             string protocol = e.Item.SubItems[4].Text;
             int key = Int32.Parse(e.Item.SubItems[0].Text);
             Packet packet;
-            bool getPacket  = capturedPackets_list.TryGetValue(key, out packet);
+            bool getPacket = capturedPackets_list.TryGetValue(key, out packet);
 
-                switch (protocol) {
-                case "TCP":
-                    if(getPacket)
+            switch (protocol)
+            {
+                case protocolTCP:
+                    if (getPacket)
                     {
                         var tcpPacket = (TcpPacket)packet.Extract(typeof(TcpPacket));
                         if (tcpPacket != null)
@@ -109,18 +113,18 @@ namespace pcapTest
                                             "\r\nACK flag: " + (tcpPacket.Ack ? "1" : "0") + // indicates if the AcknowledgmentNumber is valid
                                             "\r\nPSH flag: " + (tcpPacket.Psh ? "1" : "0") + // push 1 = the receiver should pass the data to the app immidiatly, don't buffer it
                                             "\r\nRST flag: " + (tcpPacket.Rst ? "1" : "0") + // reset 1 is to abort existing connection
-                                            // SYN indicates the sequence numbers should be synchronized between the sender and receiver to initiate a connection
+                                                                                             // SYN indicates the sequence numbers should be synchronized between the sender and receiver to initiate a connection
                                             "\r\nSYN flag: " + (tcpPacket.Syn ? "1" : "0") +
                                             // closing the connection with a deal, host_A sends FIN to host_B, B responds with ACK
                                             // FIN flag indicates the sender is finished sending
-                                            "\r\nFIN flag: " + (tcpPacket.Fin ? "1" : "0") + 
+                                            "\r\nFIN flag: " + (tcpPacket.Fin ? "1" : "0") +
                                             "\r\nECN flag: " + (tcpPacket.ECN ? "1" : "0") +
                                             "\r\nCWR flag: " + (tcpPacket.CWR ? "1" : "0") +
                                             "\r\nNS flag: " + (tcpPacket.NS ? "1" : "0");
                         }
                     }
                     break;
-                case "UDP":
+                case protocolUDP:
                     if (getPacket)
                     {
                         var udpPacket = (UdpPacket)packet.Extract(typeof(UdpPacket));
@@ -140,7 +144,7 @@ namespace pcapTest
                         }
                     }
                     break;
-                case "ARP":
+                case protocolARP:
                     if (getPacket)
                     {
                         var arpPacket = (ARPPacket)packet.Extract(typeof(ARPPacket));
@@ -164,12 +168,12 @@ namespace pcapTest
                         }
                     }
                     break;
-                case "ICMP":
+                case protocolIcmp:
                     if (getPacket)
                     {
                         var icmpPacket = (ICMPv4Packet)packet.Extract(typeof(ICMPv4Packet));
-                        if (icmpPacket   != null)
-                        {                
+                        if (icmpPacket != null)
+                        {
                             textBox2.Text = "";
                             textBox2.Text = "Packet number: " + key +
                                             " Type: ICMP v4" +
@@ -180,7 +184,7 @@ namespace pcapTest
                         }
                     }
                     break;
-                case "IGMP":
+                case protocolIgmp:
                     if (getPacket)
                     {
                         var igmpPacket = (IGMPv2Packet)packet.Extract(typeof(IGMPv2Packet));
@@ -198,10 +202,10 @@ namespace pcapTest
                 default:
                     textBox2.Text = "";
                     break;
-                }
+            }
         }
 
-        private void toolStripButton6_Click(object sender, EventArgs e)// last packet
+        private void ToolStripButton6_Click(object sender, EventArgs e)// last packet
         {
             var items = listView1.Items;
             var last = items[items.Count - 1];
@@ -209,16 +213,16 @@ namespace pcapTest
             last.Selected = true;
         }
 
-        private void toolStripButton5_Click(object sender, EventArgs e)// fist packet
+        private void ToolStripButton5_Click(object sender, EventArgs e)// fist packet
         {
             var first = listView1.Items[0];
             first.EnsureVisible();
             first.Selected = true;
         }
 
-        private void toolStripButton4_Click(object sender, EventArgs e)//next
+        private void ToolStripButton4_Click(object sender, EventArgs e)//next
         {
-            if(listView1.SelectedItems.Count == 1)
+            if (listView1.SelectedItems.Count == 1)
             {
                 int index = listView1.SelectedItems[0].Index;
                 listView1.Items[index + 1].Selected = true;
@@ -226,14 +230,14 @@ namespace pcapTest
             }
         }
 
-        private void chooseInterfaceToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ChooseInterfaceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Interfaces openInterfaceForm = new Interfaces();
             this.Hide();
             openInterfaceForm.Show();
         }
 
-        private void toolStripButton3_Click(object sender, EventArgs e)// prev
+        private void ToolStripButton3_Click(object sender, EventArgs e)// prev
         {
             if (listView1.SelectedItems.Count == 1)
             {
@@ -243,7 +247,7 @@ namespace pcapTest
             }
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)// Stop sniffing
+        private void ToolStripButton2_Click(object sender, EventArgs e)// Stop sniffing
         {
             sniffing.Abort();
             wifi_device.StopCapture();
@@ -255,7 +259,7 @@ namespace pcapTest
             toolStripButton2.Enabled = false;
         }
 
-        private void sniffing_Proccess()
+        private void Sniffing_Proccess()
         {
             // Open the device for capturing
             int readTimeoutMilliseconds = 1000;
@@ -277,48 +281,48 @@ namespace pcapTest
         {
             // dump to a file
             captureFileWriter.Write(e.Packet);
-            
+
 
             // start extracting properties for the listview 
             DateTime time = e.Packet.Timeval.Date;
-                time_str = (time.Hour + 1 ) + ":" + time.Minute + ":" + time.Second + ":" + time.Millisecond;
-                length = e.Packet.Data.Length.ToString();
+            time_str = (time.Hour + 1) + ":" + time.Minute + ":" + time.Second + ":" + time.Millisecond;
+            length = e.Packet.Data.Length.ToString();
 
 
-                var packet = PacketDotNet.Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
+            var packet = PacketDotNet.Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
 
-                // add to the list
-                capturedPackets_list.Add(packetNumber, packet);
+            // add to the list
+            capturedPackets_list.Add(packetNumber, packet);
 
-      
+
             var ipPacket = (IpPacket)packet.Extract(typeof(IpPacket));
-               
-
-                if (ipPacket != null)
-                {
-                    System.Net.IPAddress srcIp = ipPacket.SourceAddress;
-                    System.Net.IPAddress dstIp = ipPacket.DestinationAddress;
-                    protocol_type = ipPacket.Protocol.ToString();
-                    sourceIP = srcIp.ToString();
-                    destinationIP = dstIp.ToString();
 
 
+            if (ipPacket != null)
+            {
+                System.Net.IPAddress srcIp = ipPacket.SourceAddress;
+                System.Net.IPAddress dstIp = ipPacket.DestinationAddress;
+                protocol_type = ipPacket.Protocol.ToString();
+                sourceIP = srcIp.ToString();
+                destinationIP = dstIp.ToString();
 
-                    var protocolPacket = ipPacket.PayloadPacket;
 
-                    ListViewItem item = new ListViewItem(packetNumber.ToString());
-                    item.SubItems.Add(time_str);
-                    item.SubItems.Add(sourceIP);
-                    item.SubItems.Add(destinationIP);
-                    item.SubItems.Add(protocol_type);
-                    item.SubItems.Add(length);
-                
 
-                    Action action = () => listView1.Items.Add(item);
-                    listView1.Invoke(action);
-            
-                    ++packetNumber;
-                }
+                var protocolPacket = ipPacket.PayloadPacket;
+
+                ListViewItem item = new ListViewItem(packetNumber.ToString());
+                item.SubItems.Add(time_str);
+                item.SubItems.Add(sourceIP);
+                item.SubItems.Add(destinationIP);
+                item.SubItems.Add(protocol_type);
+                item.SubItems.Add(length);
+
+
+                Action action = () => listView1.Items.Add(item);
+                listView1.Invoke(action);
+
+                ++packetNumber;
+            }
         }
     }
 }
